@@ -18,9 +18,15 @@
 
 #include <nav_msgs/msg/odometry.hpp>
 
+#ifdef LIMONCELLO_HAVE_LIVOX_INTERFACES
 #include "livox_interfaces/msg/custom_msg.hpp"
+#endif
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER
 #include "livox_ros_driver/msg/custom_msg.hpp"
+#endif
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER2
 #include "livox_ros_driver2/msg/custom_msg.hpp"
+#endif
 
 #include "Core/Imu.hpp"
 #include "Core/State.hpp"
@@ -74,12 +80,23 @@ static void fromROS_livox(const MsgT& msg, PointCloudT& raw) {
   );
 } 
 
-void fromROS(const livox_ros_driver2::msg::CustomMsg& msg, PointCloudT& raw) { 
-  fromROS_livox(msg, raw); }
-void fromROS(const livox_ros_driver::msg::CustomMsg& msg,  PointCloudT& raw) { 
-  fromROS_livox(msg, raw); }
-void fromROS(const livox_interfaces::msg::CustomMsg& msg,  PointCloudT& raw) { 
-  fromROS_livox(msg, raw); }
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER2
+void fromROS(const livox_ros_driver2::msg::CustomMsg& msg, PointCloudT& raw) {
+  fromROS_livox(msg, raw);
+}
+#endif
+
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER
+void fromROS(const livox_ros_driver::msg::CustomMsg& msg, PointCloudT& raw) {
+  fromROS_livox(msg, raw);
+}
+#endif
+
+#ifdef LIMONCELLO_HAVE_LIVOX_INTERFACES
+void fromROS(const livox_interfaces::msg::CustomMsg& msg, PointCloudT& raw) {
+  fromROS_livox(msg, raw);
+}
+#endif
 
 
 
