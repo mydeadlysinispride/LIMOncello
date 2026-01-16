@@ -109,22 +109,43 @@ public:
         break;
 
       case 4:
+#ifdef LIMONCELLO_HAVE_LIVOX_INTERFACES
         lidar_sub_ = this->create_subscription<livox_interfaces::msg::CustomMsg>(
             cfg.topics.input.lidar, 5,
             std::bind(&Manager::livox_interfaces_callback, this, std::placeholders::_1), lidar_opt);
         break;
+#else
+        RCLCPP_ERROR(this->get_logger(),
+          "Lidar type %d requires livox_interfaces, but it was not found at build time.",
+          cfg.sensors.lidar.type);
+        throw std::runtime_error("Missing livox_interfaces");
+#endif
 
       case 5:
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER
         lidar_sub_ = this->create_subscription<livox_ros_driver::msg::CustomMsg>(
             cfg.topics.input.lidar, 5,
             std::bind(&Manager::livox_ros_driver_callback, this, std::placeholders::_1), lidar_opt);
         break;
+#else
+        RCLCPP_ERROR(this->get_logger(),
+          "Lidar type %d requires livox_ros_driver, but it was not found at build time.",
+          cfg.sensors.lidar.type);
+        throw std::runtime_error("Missing livox_ros_driver");
+#endif
 
       case 6:
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER2
         lidar_sub_ = this->create_subscription<livox_ros_driver2::msg::CustomMsg>(
             cfg.topics.input.lidar, 5,
             std::bind(&Manager::livox_ros_driver2_callback, this, std::placeholders::_1), lidar_opt);
         break;
+#else
+        RCLCPP_ERROR(this->get_logger(),
+          "Lidar type %d requires livox_ros_driver2, but it was not found at build time.",
+          cfg.sensors.lidar.type);
+        throw std::runtime_error("Missing livox_ros_driver2");
+#endif
 
       default:
         RCLCPP_ERROR(this->get_logger(),
@@ -219,6 +240,7 @@ public:
     }, rclcpp::Time(msg->header.stamp).seconds());
   }
 
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER
   void livox_ros_driver_callback(const livox_ros_driver::msg::CustomMsg::ConstSharedPtr& msg) {
     process_cloud([&]() {
       PointCloudT::Ptr raw(new PointCloudT);
@@ -226,7 +248,9 @@ public:
       return raw;
     }, rclcpp::Time(msg->header.stamp).seconds());
   }
+#endif
 
+#ifdef LIMONCELLO_HAVE_LIVOX_ROS_DRIVER2
   void livox_ros_driver2_callback(const livox_ros_driver2::msg::CustomMsg::ConstSharedPtr& msg) {
     process_cloud([&]() {
       PointCloudT::Ptr raw(new PointCloudT);
@@ -234,7 +258,9 @@ public:
       return raw;
     }, rclcpp::Time(msg->header.stamp).seconds());
   }
+#endif
 
+#ifdef LIMONCELLO_HAVE_LIVOX_INTERFACES
   void livox_interfaces_callback(const livox_interfaces::msg::CustomMsg::ConstSharedPtr& msg) {
     process_cloud([&]() {
       PointCloudT::Ptr raw(new PointCloudT);
@@ -242,6 +268,7 @@ public:
       return raw;
     }, rclcpp::Time(msg->header.stamp).seconds());
   }
+#endif
 
   template<typename F>
   void process_cloud(F&& producer, const double& sweep_time) {
@@ -376,4 +403,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-

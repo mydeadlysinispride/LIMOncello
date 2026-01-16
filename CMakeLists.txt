@@ -18,6 +18,14 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(TBB REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+if(TARGET TBB::tbb)
+  set(LIMONCELLO_TBB_TARGET TBB::tbb)
+elseif(DEFINED TBB_IMPORTED_TARGETS AND TBB_IMPORTED_TARGETS)
+  set(LIMONCELLO_TBB_TARGET ${TBB_IMPORTED_TARGETS})
+elseif(DEFINED TBB_LIBRARIES AND TBB_LIBRARIES)
+  set(LIMONCELLO_TBB_TARGET ${TBB_LIBRARIES})
+endif()
+
 # ROS2 dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -29,9 +37,9 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
 
 # Livox support
-find_package(livox_interfaces REQUIRED)
-find_package(livox_ros_driver REQUIRED)
-find_package(livox_ros_driver2 REQUIRED)
+find_package(livox_interfaces QUIET)
+find_package(livox_ros_driver QUIET)
+find_package(livox_ros_driver2 QUIET)
 
 # Header-only manif library (vendored in external/manif)
 add_library(manif INTERFACE)
@@ -47,24 +55,37 @@ include_directories(
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
-ament_target_dependencies(${PROJECT_NAME}
-  PUBLIC
-    rclcpp
-    pcl_conversions
-    sensor_msgs
-    nav_msgs
-    tf2
-    tf2_ros
-    tf2_eigen
-    livox_interfaces
-	  livox_ros_driver
-	  livox_ros_driver2
+set(LIMONCELLO_ROS_DEPS
+  rclcpp
+  pcl_conversions
+  sensor_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_eigen
 )
+
+if(livox_interfaces_FOUND)
+  list(APPEND LIMONCELLO_ROS_DEPS livox_interfaces)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC LIMONCELLO_HAVE_LIVOX_INTERFACES)
+endif()
+
+if(livox_ros_driver_FOUND)
+  list(APPEND LIMONCELLO_ROS_DEPS livox_ros_driver)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC LIMONCELLO_HAVE_LIVOX_ROS_DRIVER)
+endif()
+
+if(livox_ros_driver2_FOUND)
+  list(APPEND LIMONCELLO_ROS_DEPS livox_ros_driver2)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC LIMONCELLO_HAVE_LIVOX_ROS_DRIVER2)
+endif()
+
+ament_target_dependencies(${PROJECT_NAME} PUBLIC ${LIMONCELLO_ROS_DEPS})
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     ${Boost_LIBRARIES}
-    ${TBB_IMPORTED_TARGETS}
+    ${LIMONCELLO_TBB_TARGET}
     manif
 )
 
